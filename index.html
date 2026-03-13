@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="PWA offline para regulagem de pulverizador florestal com múltiplos tipos de bico.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>Pulverizador Florestal Offline</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <h1>Pulverizador Florestal</h1>
+        <p>PWA offline para regulagem com múltiplos bicos</p>
+      </div>
+      <span class="pill">Offline</span>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="entrada">Cálculo</button>
+      <button class="tab" data-tab="resultado">Resultado</button>
+      <button class="tab" data-tab="historico">Histórico</button>
+    </nav>
+
+    <main>
+      <section id="entrada" class="tab-panel active">
+        <div class="grid two">
+          <article class="card">
+            <h2>Dados da aplicação</h2>
+            <div class="field-grid">
+              <label>
+                <span>Equipamento</span>
+                <input id="equipamento" type="text" value="Pulverizador florestal 01">
+              </label>
+              <label>
+                <span>Talhão</span>
+                <input id="talhao" type="text" placeholder="Ex.: T-07">
+              </label>
+              <label>
+                <span>Taxa de aplicação (L/ha)</span>
+                <input id="taxaAplicacao" type="number" step="0.01" value="200">
+              </label>
+              <label>
+                <span>Faixa aplicada (m)</span>
+                <input id="faixaAplicada" type="number" step="0.01" value="6">
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <div>
+                <strong>Usar tempo para 50 m</strong>
+                <small>Alterna entre entrada por velocidade ou por tempo.</small>
+              </div>
+              <label class="switch">
+                <input id="usarTempo50m" type="checkbox">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="field-grid" id="velocidadeBox">
+              <label>
+                <span>Velocidade (km/h)</span>
+                <input id="velocidade" type="number" step="0.01" value="5.5">
+              </label>
+            </div>
+
+            <div class="field-grid hidden" id="tempoBox">
+              <label>
+                <span>Tempo para 50 m (s)</span>
+                <input id="tempo50m" type="number" step="0.01" value="32.73">
+              </label>
+            </div>
+
+            <div class="field-grid">
+              <label>
+                <span>Pressão de referência</span>
+                <select id="pressaoReferencia">
+                  <option value="2">2,0 bar</option>
+                  <option value="3" selected>3,0 bar</option>
+                </select>
+              </label>
+              <label>
+                <span>Observação</span>
+                <input id="observacao" type="text" placeholder="Ex.: operação herbicida em linha">
+              </label>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="row between center">
+              <h2>Pontas e quantidades</h2>
+              <button id="addPonta" class="secondary">Adicionar ponta</button>
+            </div>
+            <div id="pontasList" class="stack"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="resultado" class="tab-panel">
+        <div class="kpi-grid">
+          <article class="card kpi">
+            <h3>Velocidade operacional</h3>
+            <div id="kpiVelocidade" class="value">0,00 km/h</div>
+            <small id="kpiTempo">Tempo equivalente: 0,00 s</small>
+          </article>
+          <article class="card kpi">
+            <h3>Vazão do conjunto desejada</h3>
+            <div id="kpiVTC" class="value">0,000 L/min</div>
+            <small>(Taxa × Faixa × Velocidade) ÷ 600</small>
+          </article>
+          <article class="card kpi">
+            <h3>Vazão de referência do conjunto</h3>
+            <div id="kpiQref" class="value">0,000 L/min</div>
+            <small>Soma de vazão × quantidade</small>
+          </article>
+          <article class="card kpi">
+            <h3>Pressão de serviço</h3>
+            <div id="kpiPressao" class="value">0,00 bar</div>
+            <small>Mesma lógica da planilha</small>
+          </article>
+        </div>
+
+        <div class="grid two">
+          <article class="card">
+            <h2>Tolerância da vazão</h2>
+            <div class="kpi-grid">
+              <div class="mini-card">
+                <h4>Menor aceitável</h4>
+                <div id="tolMenor" class="mini-value">0,000</div>
+                <small>-5%</small>
+              </div>
+              <div class="mini-card highlight">
+                <h4>Ideal</h4>
+                <div id="tolIdeal" class="mini-value">0,000</div>
+                <small>100%</small>
+              </div>
+              <div class="mini-card">
+                <h4>Maior aceitável</h4>
+                <div id="tolMaior" class="mini-value">0,000</div>
+                <small>+5%</small>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <h2>Diagnóstico</h2>
+            <div class="stack compact">
+              <p><strong>Equipamento:</strong> <span id="diagEquipamento">-</span></p>
+              <p><strong>Talhão:</strong> <span id="diagTalhao">-</span></p>
+              <p><strong>Pressão de referência:</strong> <span id="diagPref">-</span></p>
+              <p><strong>Status:</strong> <span id="diagStatus">-</span></p>
+              <p><strong>Observação:</strong> <span id="diagObs">-</span></p>
+            </div>
+            <div class="actions">
+              <button id="salvarCalculo">Salvar cálculo</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="historico" class="tab-panel">
+        <article class="card">
+          <div class="row between center">
+            <h2>Histórico local offline</h2>
+            <button id="limparHistorico" class="secondary danger">Limpar</button>
+          </div>
+          <div id="historicoList" class="stack"></div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <template id="pontaTemplate">
+    <div class="ponta-card">
+      <div class="row between center">
+        <strong class="ponta-title">Ponta</strong>
+        <button class="secondary remove-ponta">Remover</button>
+      </div>
+      <div class="field-grid three">
+        <label>
+          <span>Nome do bico</span>
+          <input class="ponta-nome" type="text">
+        </label>
+        <label>
+          <span>Vazão de referência (L/min)</span>
+          <input class="ponta-vazao" type="number" step="0.001">
+        </label>
+        <label>
+          <span>Quantidade</span>
+          <input class="ponta-quantidade" type="number" step="1">
+        </label>
+      </div>
+      <small class="contribuicao">Contribuição: 0,000 L/min</small>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
